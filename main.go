@@ -6,7 +6,6 @@ import (
 	"github.com/Ferguzz/glam"
 	"github.com/go-gl/gl"
 	glfw "github.com/go-gl/glfw3"
-	"io/ioutil"
 	"runtime"
 	"time"
 )
@@ -58,13 +57,13 @@ func run() {
 			panic("Can't initialise OpenGL.")
 		}
 
-		vertexShader, err := loadShader(gl.VERTEX_SHADER, "block_shader.vert")
+		vertexShader, err := loadShader(gl.VERTEX_SHADER, block_vertex_shader)
 		if err != nil {
 			panic(err)
 		}
 		defer vertexShader.Delete()
 
-		fragmentShader, err := loadShader(gl.FRAGMENT_SHADER, "block_shader.frag")
+		fragmentShader, err := loadShader(gl.FRAGMENT_SHADER, block_fragment_shader)
 		if err != nil {
 			panic(err)
 		}
@@ -76,6 +75,9 @@ func run() {
 		shaderProgram.BindFragDataLocation(0, "outColor")
 		shaderProgram.Link()
 		shaderProgram.Use()
+
+		shaderProgram.DetachShader(vertexShader)
+		shaderProgram.DetachShader(fragmentShader)
 		defer shaderProgram.Delete()
 
 		projection := glam.Orthographic(height, aspect, -1, 1)
@@ -134,12 +136,7 @@ func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Ac
 func loadShader(shaderType gl.GLenum, source string) (gl.Shader, error) {
 	shader := gl.CreateShader(shaderType)
 
-	shaderSource, err := ioutil.ReadFile(source)
-	if err != nil {
-		return shader, err
-	}
-
-	shader.Source(string(shaderSource))
+	shader.Source(source)
 	shader.Compile()
 
 	if shader.Get(gl.COMPILE_STATUS) == 0 {

@@ -35,18 +35,18 @@ func init() {
 }
 
 func randomColor() Color {
-	color := Color{1, 1, 1}
-	switch rand.Intn(5) {
+	var color Color
+	switch rand.Intn(4) {
 	case 0:
 		// Red.
 		color = Color{1, 0, 0}
 	case 1:
 		// Green.
 		color = Color{0, 1, 0}
-	case 3:
+	case 2:
 		// Blue.
 		color = Color{0, 0, 1}
-	case 4:
+	case 3:
 		// White.
 		color = Color{1, 1, 1}
 	}
