@@ -80,6 +80,9 @@ func run() {
 		shaderProgram.DetachShader(fragmentShader)
 		defer shaderProgram.Delete()
 
+		GenerateShapes()
+		defer CleanUpShapes()
+
 		projection := glam.Orthographic(height, aspect, -1, 1)
 		shaderProgram.GetUniformLocation("projection").UniformMatrix4fv(false, projection)
 		shaderProgram.GetUniformLocation("scale").Uniform1f(gridSize)

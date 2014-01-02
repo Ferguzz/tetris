@@ -8,27 +8,32 @@ import (
 	"time"
 )
 
+// Blocks are what are drawn to the screen so they need to remeber where they are and what color they are etc.
 type Block struct {
+	shape       *Shape
+	position    glam.Vec3
+	orientation int
+	color       Color
+}
+
+// Shapes contain all the information that a block needs to draw itself e.g. vertex arrays, element buffers etc.
+type Shape struct {
+	vertices      []gl.GLfloat
+	elements      []gl.GLushort
 	vao           gl.VertexArray
 	vbo           gl.Buffer
 	elementBuffer gl.Buffer
 	numElements   int
-	position      glam.Vec3
-	orientation   int
-	color         Color
 }
 
+// This slice holds all the blocks that need to be drawn.
 var blocks []Block
 
-type Shape struct {
-	vertices []gl.GLfloat
-	elements []gl.GLushort
-}
+const numShapes = 2
+
+var Shapes []Shape = make([]Shape, numShapes)
 
 type Color []float32
-
-var square Shape = Shape{[]gl.GLfloat{-1, -1, 1, -1, -1, 1, 1, 1}, []gl.GLushort{0, 1, 2, 2, 3, 1}}
-var L Shape = Shape{[]gl.GLfloat{-2, 0, -2, -1, 2, -1, 2, 0, 2, 1, 1, 1, 1, 0}, []gl.GLushort{0, 1, 2, 2, 3, 0, 3, 4, 5, 5, 6, 3}}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -54,63 +59,71 @@ func randomColor() Color {
 	return color
 }
 
-func randomShape() Shape {
-	var shape Shape
-	switch rand.Intn(2) {
-	case 0:
-		shape = square
-	case 1:
-		shape = L
+func randomShape() *Shape {
+	return &Shapes[rand.Intn(numShapes)]
+}
+
+// Generate all the vaos on startup.  I could do this only when they are first required, but this may delay the block generation.
+func GenerateShapes() {
+	// Square
+	Shapes[0].vertices = []gl.GLfloat{-1, -1, 1, -1, -1, 1, 1, 1}
+	Shapes[0].elements = []gl.GLushort{0, 1, 2, 2, 3, 1}
+
+	// L
+	Shapes[1].vertices = []gl.GLfloat{-2, 0, -2, -1, 2, -1, 2, 0, 2, 1, 1, 1, 1, 0}
+	Shapes[1].elements = []gl.GLushort{0, 1, 2, 2, 3, 0, 3, 4, 5, 5, 6, 3}
+
+	// Now fill out the rest automatically.
+	// FIXME why doesn't using _, shape in this loop work ?
+	for i := range Shapes {
+		Shapes[i].vao = gl.GenVertexArray()
+		Shapes[i].vao.Bind()
+		Shapes[i].vbo = gl.GenBuffer()
+		Shapes[i].vbo.Bind(gl.ARRAY_BUFFER)
+		gl.BufferData(gl.ARRAY_BUFFER, len(Shapes[i].vertices)*4, Shapes[i].vertices, gl.STATIC_DRAW)
+		Shapes[i].elementBuffer = gl.GenBuffer()
+		Shapes[i].elementBuffer.Bind(gl.ELEMENT_ARRAY_BUFFER)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(Shapes[i].elements)*2, Shapes[i].elements, gl.STATIC_DRAW)
+		Shapes[i].numElements = len(Shapes[i].elements)
+
+		vertexAttribArray := shaderProgram.GetAttribLocation("position")
+		vertexAttribArray.AttribPointer(2, gl.FLOAT, false, 0, uintptr(0))
+		vertexAttribArray.EnableArray()
 	}
-	return shape
+}
+
+func CleanUpShapes() {
+	// Fixme does this actually work or is it broken in the same way as above ?
+	for _, shape := range Shapes {
+		shape.vao.Delete()
+		shape.vbo.Delete()
+		shape.elementBuffer.Delete()
+	}
 }
 
 func NewBlock() {
-
-	// I only need one vao per block type, not per actual block.
-
 	var block Block
-	shape := randomShape()
-	block.vao = gl.GenVertexArray()
-	block.vao.Bind()
-	block.vbo = gl.GenBuffer()
-	block.vbo.Bind(gl.ARRAY_BUFFER)
-	gl.BufferData(gl.ARRAY_BUFFER, len(shape.vertices)*4, shape.vertices, gl.STATIC_DRAW)
-	block.elementBuffer = gl.GenBuffer()
-	block.elementBuffer.Bind(gl.ELEMENT_ARRAY_BUFFER)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(shape.elements)*2, shape.elements, gl.STATIC_DRAW)
-	block.numElements = len(shape.elements)
-
-	vertexAttribArray := shaderProgram.GetAttribLocation("position")
-	vertexAttribArray.AttribPointer(2, gl.FLOAT, false, 0, uintptr(0))
-	vertexAttribArray.EnableArray()
+	block.shape = randomShape()
 
 	// Initialise a random X position.
 	block.position = glam.Vec3{0, 0, 0}
 	// Pick a random orientation.
 	block.orientation = rand.Intn(4)
 	// Finally, a random color.
-	// block.color = Color{1, 0, 0}
 	block.color = randomColor()
 
 	blocks = append(blocks, block)
 }
 
-func (block *Block) Delete() {
-	block.vao.Delete()
-	block.vbo.Delete()
-	block.elementBuffer.Delete()
-}
-
 func (block *Block) Draw() {
-	block.vao.Bind()
+	block.shape.vao.Bind()
 	position := glam.Translation(block.position)
 	rotation := glam.Rotation(float32(block.orientation)*math.Pi/2.0, glam.Vec3{0, 0, 1})
 	var model glam.Mat4
 	model.Multiply(&rotation, &position)
 	shaderProgram.GetUniformLocation("model").UniformMatrix4fv(false, model)
 	shaderProgram.GetUniformLocation("inColor").Uniform3fv(1, block.color)
-	gl.DrawElements(gl.TRIANGLES, block.numElements, gl.UNSIGNED_SHORT, uintptr(0))
+	gl.DrawElements(gl.TRIANGLES, block.shape.numElements, gl.UNSIGNED_SHORT, uintptr(0))
 }
 
 func (block *Block) Move(direction int) {
