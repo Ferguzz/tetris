@@ -154,6 +154,7 @@ func errorCallback(err glfw.ErrorCode, desc string) {
 }
 
 func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	runtime.LockOSThread()
 }
 
