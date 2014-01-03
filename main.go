@@ -33,29 +33,11 @@ var generateNewBlock chan bool = make(chan bool, 1)
 func run() {
 	// All OpenGL related stuff needs to be called from the same goroutine.  The mainThread function achieves this.
 	mainThread(func() {
-		glfw.SetErrorCallback(errorCallback)
-
-		if !glfw.Init() {
-			panic("Can't init glfw!")
-		}
-		defer glfw.Terminate()
-
-		glfw.WindowHint(glfw.ContextVersionMajor, 3)
-		glfw.WindowHint(glfw.ContextVersionMinor, 2)
-		glfw.WindowHint(glfw.OpenglProfile, glfw.OpenglCoreProfile)
-		glfw.WindowHint(glfw.OpenglForwardCompatible, gl.TRUE)
-
-		window, err := glfw.CreateWindow(width, height, "Tetris", nil, nil)
+		window, err := glInit()
 		if err != nil {
 			panic(err)
 		}
-
-		window.MakeContextCurrent()
-		window.SetKeyCallback(keyCallback)
-
-		if gl.Init() != 0 {
-			panic("Can't initialise OpenGL.")
-		}
+		defer glExit()
 
 		vertexShader, err := loadShader(gl.VERTEX_SHADER, block_vertex_shader)
 		if err != nil {
@@ -117,6 +99,36 @@ func run() {
 		}
 	})
 	close(mainfunc)
+}
+
+func glInit() (*glfw.Window, error) {
+	glfw.SetErrorCallback(errorCallback)
+
+	if !glfw.Init() {
+		return nil, errors.New("Can't initialise GLFW!")
+	}
+
+	glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 2)
+	glfw.WindowHint(glfw.OpenglProfile, glfw.OpenglCoreProfile)
+	glfw.WindowHint(glfw.OpenglForwardCompatible, gl.TRUE)
+
+	window, err := glfw.CreateWindow(width, height, "Tetris", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	window.SetKeyCallback(keyCallback)
+	window.MakeContextCurrent()
+	if gl.Init() != 0 {
+		return nil, errors.New("Can't initialise OpenGL.")
+	}
+
+	return window, nil
+}
+
+func glExit() {
+	glfw.Terminate()
 }
 
 func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {

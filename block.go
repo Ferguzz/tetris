@@ -59,10 +59,6 @@ func randomColor() Color {
 	return color
 }
 
-func randomShape() *Shape {
-	return &Shapes[rand.Intn(numShapes)]
-}
-
 // Generate all the vaos on startup.  I could do this only when they are first required, but this may delay the block generation.
 func GenerateShapes() {
 	// Square
@@ -103,7 +99,7 @@ func CleanUpShapes() {
 
 func NewBlock() {
 	var block Block
-	block.shape = randomShape()
+	block.shape = &Shapes[rand.Intn(numShapes)]
 
 	// Initialise a random X position.
 	block.position = glam.Vec3{0, 0, 0}
