@@ -20,9 +20,13 @@ const (
 		uniform mat4 projection;
 		uniform mat4 model;
 		uniform float scale;
+		uniform bool reflect;
 
 		void main()
 		{
+			if (reflect) {
+				position.x = -position.x;
+			}
 		    gl_Position = projection * model * vec4(position*scale, 0.0, 1.0);
 		}
 	`

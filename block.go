@@ -13,6 +13,7 @@ type Block struct {
 	shape       *Shape
 	position    glam.Vec3
 	orientation int
+	reflect     int
 	color       Color
 }
 
@@ -29,7 +30,7 @@ type Shape struct {
 // This slice holds all the blocks that need to be drawn.
 var blocks []Block
 
-const numShapes = 2
+const numShapes = 4
 
 var Shapes []Shape = make([]Shape, numShapes)
 
@@ -65,9 +66,17 @@ func GenerateShapes() {
 	Shapes[0].vertices = []gl.GLfloat{-1, -1, 1, -1, -1, 1, 1, 1}
 	Shapes[0].elements = []gl.GLushort{0, 1, 2, 2, 3, 1}
 
-	// L
+	// ___|
 	Shapes[1].vertices = []gl.GLfloat{-2, 0, -2, -1, 2, -1, 2, 0, 2, 1, 1, 1, 1, 0}
 	Shapes[1].elements = []gl.GLushort{0, 1, 2, 2, 3, 0, 3, 4, 5, 5, 6, 3}
+
+	// _|_
+	Shapes[2].vertices = []gl.GLfloat{-1.5, 0, -0.5, 0, -0.5, 1, 0.5, 1, 0.5, 0, 1.5, 0, 1.5, -1, -1.5, -1}
+	Shapes[2].elements = []gl.GLushort{1, 2, 3, 3, 4, 1, 0, 7, 6, 6, 0, 5}
+
+	// Snake
+	Shapes[3].vertices = []gl.GLfloat{-1.5, -1, -1.5, 0, -0.5, 0, -0.5, 1, 1.5, 1, 1.5, 0, 0.5, 0, 0.5, -1}
+	Shapes[3].elements = []gl.GLushort{0, 1, 6, 6, 7, 0, 2, 3, 4, 4, 5, 2}
 
 	// Now fill out the rest automatically.
 	// FIXME why doesn't using _, shape in this loop work ?
@@ -105,6 +114,8 @@ func NewBlock() {
 	block.position = glam.Vec3{0, 0, 0}
 	// Pick a random orientation.
 	block.orientation = rand.Intn(4)
+	block.reflect = rand.Intn(2)
+
 	// Finally, a random color.
 	block.color = randomColor()
 
@@ -119,6 +130,7 @@ func (block *Block) Draw() {
 	model.Multiply(&rotation, &position)
 	shaderProgram.GetUniformLocation("model").UniformMatrix4fv(false, model)
 	shaderProgram.GetUniformLocation("inColor").Uniform3fv(1, block.color)
+	shaderProgram.GetUniformLocation("reflect").Uniform1i(block.reflect)
 	gl.DrawElements(gl.TRIANGLES, block.shape.numElements, gl.UNSIGNED_SHORT, uintptr(0))
 }
 
