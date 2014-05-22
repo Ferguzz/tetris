@@ -130,7 +130,7 @@ func (block *Block) Draw() {
 	model.Multiply(&rotation, &position)
 	shaderProgram.GetUniformLocation("model").UniformMatrix4fv(false, model)
 	shaderProgram.GetUniformLocation("inColor").Uniform3fv(1, block.color)
-	shaderProgram.GetUniformLocation("reflect").Uniform1i(block.reflect)
+	// shaderProgram.GetUniformLocation("reflect").Uniform1i(block.reflect)
 	gl.DrawElements(gl.TRIANGLES, block.shape.numElements, gl.UNSIGNED_SHORT, uintptr(0))
 }
 
