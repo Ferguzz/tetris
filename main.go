@@ -65,6 +65,7 @@ func run() {
 		GenerateShapes()
 		defer CleanUpShapes()
 
+		// Can I get the projection to move (0,0) to one of the corners?
 		projection := glam.Orthographic(height, aspect, -1, 1)
 		shaderProgram.GetUniformLocation("projection").UniformMatrix4fv(false, projection)
 		shaderProgram.GetUniformLocation("scale").Uniform1f(gridSize)

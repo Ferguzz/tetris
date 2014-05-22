@@ -111,7 +111,9 @@ func NewBlock() {
 	block.shape = &Shapes[rand.Intn(numShapes)]
 
 	// Initialise a random X position.
-	block.position = glam.Vec3{0, 0, 0}
+	// The blocks must snap to the grid.  Since shapes are defined around their COM, the centres are not what should be
+	// snapped.  How do I deal with this ?
+	block.position = glam.Vec3{float32((rand.Intn(width/gridSize))*gridSize) - width/2, 200, 0}
 	// Pick a random orientation.
 	block.orientation = rand.Intn(4)
 	block.reflect = rand.Intn(2)
